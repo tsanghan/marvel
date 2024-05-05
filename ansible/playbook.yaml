@@ -1,0 +1,27 @@
+- hosts: localhost
+  gather_facts: true
+
+  vars:
+    timestamp: "{{ ansible_date_time.epoch }}"
+    pub_key: "{{ lookup('ansible.builtin.env', 'PUB_KEY') }}"
+    pri_key: "{{ lookup('ansible.builtin.env', 'PRI_KEY') }}"
+    concat_str: "{{ timestamp + pri_key + pub_key }}"
+    hash: "{{ concat_str | md5 }}"
+
+  tasks:
+    - name: call marvel api
+      ansible.builtin.uri:
+        url: "http://gateway.marvel.com/v1/public/characters?ts={{ timestamp }}&apikey={{ pub_key }}&hash={{ hash }}&name=Hulk"
+      register: this
+
+    - name: debug
+      ansible.builtin.debug:
+        msg:
+          - "{{ timestamp}}"
+          - "{{ hash }}"
+          - "{{ this }}"
+
+    - name: write response to file
+      ansible.builtin.copy:
+        content: "{{ this }}"
+        dest: restapi.json
